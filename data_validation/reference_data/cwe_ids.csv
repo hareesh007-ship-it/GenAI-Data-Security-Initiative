@@ -1,0 +1,12 @@
+cwe_id,name,description
+CWE-20,Improper Input Validation,Product does not validate or incorrectly validates input
+CWE-79,Cross-site Scripting (XSS),Improper neutralization of input during web page generation
+CWE-89,SQL Injection,Improper neutralization of special elements used in SQL commands
+CWE-200,Exposure of Sensitive Information,Intentional or unintentional disclosure of information
+CWE-285,Improper Authorization,Software does not perform authorization checks
+CWE-311,Missing Encryption of Sensitive Data,Failure to encrypt sensitive data
+CWE-327,Use of Broken Crypto Algorithm,Use of a risky cryptographic algorithm
+CWE-352,Cross-Site Request Forgery,Web application does not verify request was intentionally provided
+CWE-522,Insufficiently Protected Credentials,Transmitting or storing credentials in an unsafe manner
+CWE-732,Incorrect Permission Assignment,Permissions assigned to resource are incorrect
+CWE-918,Server-Side Request Forgery,Web application fetches a remote resource without validating the URL

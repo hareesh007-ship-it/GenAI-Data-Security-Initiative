@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cross-Framework Control Mapping Entry",
+  "type": "object",
+  "required": ["dsgai_id", "dsgai_name", "framework", "control_id", "control_name", "relationship"],
+  "properties": {
+    "dsgai_id": { "type": "string", "pattern": "^DSGAI(0[1-9]|1[0-9]|2[01])$" },
+    "dsgai_name": { "type": "string" },
+    "framework": { "type": "string" },
+    "control_id": { "type": "string" },
+    "control_name": { "type": "string" },
+    "relationship": { "type": "string", "enum": ["mitigates", "detects", "governs", "partially_addresses", "related"] },
+    "notes": { "type": "string" },
+    "mitigation_tier": { "type": "string", "enum": ["Tier 1", "Tier 2", "Tier 3"] }
+  }
+}

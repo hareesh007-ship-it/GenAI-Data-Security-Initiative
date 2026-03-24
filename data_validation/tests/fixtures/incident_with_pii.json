@@ -1,0 +1,14 @@
+{
+  "incident_id": "INC-0002",
+  "date": "2025-04-22",
+  "summary": "John Smith at Acme Corp (john.smith@acmecorp.com) reported that the internal LLM assistant at 192.168.1.50 was leaking API keys including sk-proj-abc123def456 in its responses.",
+  "dsgai_mapping": ["DSGAI01", "DSGAI02"],
+  "attack_vector": "Direct prompt requesting system configuration",
+  "data_types_affected": ["credentials", "pii"],
+  "root_cause": "System prompt included production API keys",
+  "impact": "API key exposed to all internal users of the assistant",
+  "detection_method": "Security team audit",
+  "mitigations_applied": "Rotated keys, removed from system prompt",
+  "source": "Internal report from Acme Corp security team",
+  "industry": "Technology"
+}

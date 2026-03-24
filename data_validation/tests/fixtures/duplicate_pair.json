@@ -1,0 +1,17 @@
+{
+  "_comment": "These two entries describe the same incident and should trigger dedup detection",
+  "entry_a": {
+    "incident_id": "INC-0010",
+    "date": "2025-05-01",
+    "summary": "Multi-tenant vector store returned documents from another tenant due to missing tenant ID filtering at query time",
+    "dsgai_mapping": ["DSGAI11", "DSGAI13"],
+    "attack_vector": "Cross-tenant retrieval via unscoped vector queries"
+  },
+  "entry_b": {
+    "incident_id": "INC-0011",
+    "date": "2025-05-01",
+    "summary": "Vector database serving multiple customers leaked documents across tenant boundaries because tenant scoping was not enforced during retrieval",
+    "dsgai_mapping": ["DSGAI11", "DSGAI13"],
+    "attack_vector": "Unscoped vector store queries crossing tenant boundaries"
+  }
+}

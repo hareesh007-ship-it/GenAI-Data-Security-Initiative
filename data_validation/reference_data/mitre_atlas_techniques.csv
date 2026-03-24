@@ -1,0 +1,29 @@
+technique_id,name,tactic
+AML.T0002,Data Poisoning,Initial Access
+AML.T0003,Publish Poisoned Datasets,Resource Development
+AML.T0004,ML Supply Chain Compromise,Initial Access
+AML.T0010,ML Model Inference API Access,Initial Access
+AML.T0013,Discover ML Artifacts,Collection
+AML.T0014,Discover ML Model Ontology,Discovery
+AML.T0015,Evade ML Model,Defense Evasion
+AML.T0018,Backdoor ML Model,Persistence
+AML.T0019,Publish Poisoned Models,Resource Development
+AML.T0020,Poison Training Data,Impact
+AML.T0024,Exfiltration via ML Inference API,Exfiltration
+AML.T0025,Exfiltration via Cyber Means,Exfiltration
+AML.T0029,Denial of ML Service,Impact
+AML.T0031,Erode ML Model Integrity,Impact
+AML.T0034,Cost Harvesting,Impact
+AML.T0035,ML Intellectual Property Theft,Impact
+AML.T0036,Data Reconstruction,Exfiltration
+AML.T0040,ML Model Inversion,Exfiltration
+AML.T0043,Craft Adversarial Data,Execution
+AML.T0044,Full ML Model Access,Collection
+AML.T0045,Extract ML Model,Exfiltration
+AML.T0046,Prompt Injection - Direct,Initial Access
+AML.T0048,Prompt Injection - Indirect,Initial Access
+AML.T0050,Command Injection via Prompt,Execution
+AML.T0051,LLM Prompt Injection,Initial Access
+AML.T0054,LLM Jailbreak,Defense Evasion
+AML.T0056,LLM Meta Prompt Extraction,Collection
+AML.T0057,LLM Data Leakage,Exfiltration

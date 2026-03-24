@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RAG Poisoning and Retrieval Integrity Entry",
+  "type": "object",
+  "required": ["document_id", "category", "dsgai_mapping", "content"],
+  "properties": {
+    "document_id": { "type": "string", "pattern": "^RAG-\\d{4}$" },
+    "category": { "type": "string", "enum": ["poisoned_document", "integrity_test", "redaction_test", "cross_tenant_probe", "embedding_inversion_test"] },
+    "dsgai_mapping": { "type": "array", "items": { "type": "string", "pattern": "^DSGAI(0[1-9]|1[0-9]|2[01])$" }, "minItems": 1 },
+    "content": { "type": "string", "minLength": 10 },
+    "adversarial_payload": { "type": "string" },
+    "expected_secure": { "type": "string" },
+    "expected_vulnerable": { "type": "string" },
+    "metadata": { "type": "object" }
+  }
+}

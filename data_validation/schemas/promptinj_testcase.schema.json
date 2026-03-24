@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prompt Injection and Data Extraction Test Case",
+  "type": "object",
+  "required": ["testcase_id", "category", "dsgai_mapping", "prompt", "expected_secure", "expected_vulnerable", "severity"],
+  "properties": {
+    "testcase_id": { "type": "string", "pattern": "^TC-\\d{4}$" },
+    "category": { "type": "string", "enum": ["direct_extraction", "cross_context_bleed", "system_prompt_extraction", "tool_plugin_leakage", "nl_query_injection", "multimodal_extraction", "credential_harvesting", "other"] },
+    "dsgai_mapping": { "type": "array", "items": { "type": "string", "pattern": "^DSGAI(0[1-9]|1[0-9]|2[01])$" }, "minItems": 1 },
+    "prompt": { "type": "string", "minLength": 5 },
+    "expected_secure": { "type": "string" },
+    "expected_vulnerable": { "type": "string" },
+    "prerequisites": { "type": "string" },
+    "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low"] },
+    "source": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}
