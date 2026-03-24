@@ -16,7 +16,7 @@ This initiative produces community-developed, peer-reviewed guidance to help org
 
 ### GenAI Data Security Risks and Mitigations 2026 (v1.0)
 
-📄 [Download PDF](<!-- TODO: Add link to published PDF -->) · Released March 2026
+📄 [Download PDF](https://genai.owasp.org/resource/owasp-genai-data-security-risks-mitigations-2026/) · Released March 2026
 
 A focused enumeration of 21 data security risks specific to GenAI systems, each with tiered mitigations (Foundational → Hardening → Advanced) designed to support organizations at different stages of security maturity. This is not a Top 10 — it is a comprehensive, structured risk taxonomy following data as it moves through a GenAI system.
 
