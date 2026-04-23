@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWASP DSGAI Data Security Compliance Report — demo-customer-ai</title>
+<style>
+  :root {
+    --pass: #16a34a; --pass-bg: #f0fdf4;
+    --warn: #ca8a04; --warn-bg: #fefce8;
+    --fail: #dc2626; --fail-bg: #fef2f2;
+    --nv: #2563eb; --nv-bg: #eff6ff;
+    --na: #6b7280; --na-bg: #f9fafb;
+    --radius: 12px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; font-size: 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  code, .mono { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; font-size: 12px; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%); color: white; padding: 32px 40px; }
+  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 15px; opacity: 0.9; margin-top: 6px; }
+  .header .meta { opacity: 0.75; font-size: 13px; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 20px; }
+
+  /* Section dividers */
+  .section-divider { background: #312e81; color: white; padding: 12px 40px; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; }
+
+  /* Main */
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* Executive Summary */
+  .exec-summary { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 24px; border-left: 5px solid #312e81; page-break-inside: avoid; }
+  .exec-summary h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #312e81; }
+  .exec-summary .opening { color: #475569; line-height: 1.7; margin-bottom: 14px; font-size: 13px; }
+  .exec-summary ul { padding-left: 20px; }
+  .exec-summary li { color: #475569; line-height: 1.8; font-size: 13px; margin-bottom: 4px; }
+  .exec-summary .remediation-priority { margin-top: 16px; padding: 12px 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; font-size: 13px; color: #92400e; }
+  .exec-summary .remediation-priority strong { color: #c2410c; }
+
+  /* Goal section */
+  .goal-section { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 28px; margin-bottom: 24px; border-left: 5px solid #0f766e; page-break-inside: avoid; }
+  .goal-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #0f766e; }
+  .goal-section .goal-intro { color: #475569; line-height: 1.75; font-size: 13px; margin-bottom: 16px; }
+  .goal-section ul { padding-left: 20px; }
+  .goal-section li { color: #475569; line-height: 1.85; font-size: 13px; margin-bottom: 5px; }
+  .goal-section .report-structure { margin-top: 18px; padding: 14px 16px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; font-size: 13px; color: #134e4a; }
+  .goal-section .report-structure strong { color: #0f766e; display: block; margin-bottom: 8px; }
+  .goal-section .report-structure ol { padding-left: 20px; }
+  .goal-section .report-structure li { margin-bottom: 4px; }
+
+  /* Dashboard */
+  .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; text-align: center; page-break-inside: avoid; }
+  .card .num { font-size: 28px; font-weight: 700; }
+  .card .lbl { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .card.fail .num { color: var(--fail); }
+  .card.warn .num { color: var(--warn); }
+  .card.pass .num { color: var(--pass); }
+  .card.nv .num { color: var(--nv); }
+  .card.na .num { color: var(--na); }
+  .card.cve-p .num { color: var(--pass); }
+  .card.cve-u .num { color: var(--na); }
+
+  /* Compliance bar */
+  .compliance-bar-wrap { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 24px; page-break-inside: avoid; }
+  .compliance-bar-wrap h3 { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #475569; }
+  .bar { display: flex; border-radius: 8px; overflow: hidden; height: 28px; }
+  .bar-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+  .bar-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+  .bar-legend span { font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  /* AI Stack */
+  .stack { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 24px; page-break-inside: avoid; }
+  .stack h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid; }
+  .chip.framework { background: #ede9fe; border-color: #7c3aed; color: #5b21b6; }
+  .chip.vector { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+  .chip.llm { background: #dbeafe; border-color: #3b82f6; color: #1d4ed8; }
+  .chip.mcp { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+  .chip.db { background: #dcfce7; border-color: #22c55e; color: #15803d; }
+  .chip.obs { background: #f3e8ff; border-color: #a855f7; color: #7e22ce; }
+
+  /* Scope legend */
+  .scope-legend { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; page-break-inside: avoid; }
+  .scope-legend h3 { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .scope-legend .scope-items { display: flex; flex-wrap: wrap; gap: 16px; }
+  .scope-legend .scope-item { display: flex; align-items: flex-start; gap: 8px; }
+  .scope-legend .scope-badge { padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #f3e8ff; color: #7c3aed; white-space: nowrap; }
+  .scope-legend .scope-desc { font-size: 12px; color: #475569; line-height: 1.5; max-width: 260px; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .badge.fail { background: var(--fail-bg); color: var(--fail); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+  .badge.pass { background: var(--pass-bg); color: var(--pass); }
+  .badge.nv { background: var(--nv-bg); color: var(--nv); }
+  .badge.na { background: #f1f5f9; color: var(--na); }
+  .badge.t1 { background: #fee2e2; color: var(--fail); }
+  .badge.t2 { background: #fef9c3; color: var(--warn); }
+  .badge.t3 { background: #dbeafe; color: var(--nv); }
+  .badge.scope { background: #f3e8ff; color: #7c3aed; }
+  .badge.cve { background: #fee2e2; color: var(--fail); font-family: monospace; }
+  .badge.cve-patched { background: var(--pass-bg); color: var(--pass); font-family: monospace; }
+
+  /* Finding cards — always open for PDF */
+  .finding { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; border-left: 5px solid #e2e8f0; page-break-inside: avoid; }
+  .finding.status-fail { border-left-color: var(--fail); }
+  .finding.status-warn { border-left-color: var(--warn); }
+  .finding.status-pass { border-left-color: var(--pass); }
+  .finding.status-nv { border-left-color: var(--nv); }
+  .finding.status-na { border-left-color: var(--na); }
+  .finding-header { padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .finding-title { font-weight: 600; font-size: 14px; flex: 1; }
+  .finding-id { font-size: 11px; color: #94a3b8; font-family: monospace; min-width: 70px; }
+  .finding-body { padding: 0 18px 18px; }
+  .finding-body p { color: #475569; line-height: 1.6; margin-bottom: 8px; font-size: 13px; }
+  .evidence { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin: 10px 0; }
+  .evidence code { display: block; line-height: 1.7; color: #dc2626; }
+  .evidence code.ok { color: var(--pass); }
+  .remediation { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .remediation strong { color: #c2410c; font-size: 12px; }
+  .remediation ul { margin-top: 6px; padding-left: 18px; }
+  .remediation li { line-height: 1.7; color: #92400e; font-size: 13px; }
+
+  /* Summary table */
+  .table-wrap { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 24px; overflow-x: auto; }
+  .table-wrap h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f8fafc; padding: 8px 12px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+
+  /* Recommendations */
+  .recs { margin-bottom: 24px; }
+  .recs h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .rec-card { border-radius: var(--radius); padding: 18px; margin-bottom: 12px; page-break-inside: avoid; }
+  .rec-card.t1 { background: #fef2f2; border: 1px solid #fecaca; }
+  .rec-card.t2 { background: #fefce8; border: 1px solid #fde68a; }
+  .rec-card.t3 { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .rec-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .rec-card.t1 h3 { color: var(--fail); }
+  .rec-card.t2 h3 { color: var(--warn); }
+  .rec-card.t3 h3 { color: var(--nv); }
+  .rec-card ul { padding-left: 18px; }
+  .rec-card li { line-height: 1.8; font-size: 13px; }
+
+  /* Checklist */
+  .checklist { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 24px; page-break-inside: avoid; }
+  .checklist h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .checklist ul { list-style: none; }
+  .checklist li { padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+  .checklist li:last-child { border: none; }
+
+  /* CVE section */
+  .cve-banner { border-radius: var(--radius); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13px; page-break-inside: avoid; }
+  .cve-banner.online { background: var(--pass-bg); border: 1px solid #bbf7d0; color: #15803d; }
+  .pkg-table { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; page-break-inside: avoid; }
+  .pkg-table h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  /* CVE Groups */
+  .cve-group { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; page-break-inside: avoid; }
+  .cve-group-header { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-left: 5px solid; flex-wrap: wrap; }
+  .cve-group-header.exploitable { border-left-color: var(--fail); background: var(--fail-bg); }
+  .cve-group-header.unknown { border-left-color: var(--warn); background: var(--warn-bg); }
+  .cve-group-header.not-affected { border-left-color: var(--pass); background: var(--pass-bg); }
+  .cve-group-header .risk-id { font-size: 13px; font-weight: 700; font-family: monospace; }
+  .cve-group-header .risk-name { font-size: 13px; color: #475569; }
+  .cve-group-header .cve-count { margin-left: auto; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .cve-group-header.exploitable .cve-count { background: var(--fail); color: white; }
+  .cve-group-header.unknown .cve-count { background: var(--warn); color: white; }
+  .cve-group-header.not-affected .cve-count { background: var(--pass); color: white; }
+  .cve-card { padding: 16px 18px; border-bottom: 1px solid #f1f5f9; page-break-inside: avoid; }
+  .cve-card:last-child { border-bottom: none; }
+  .cve-card.patched { border-left: none; }
+  .cve-card.unknown { border-left: none; }
+  .cve-id { font-family: monospace; font-size: 14px; font-weight: 700; }
+  .cve-id.patched { color: var(--pass); }
+  .cve-id.unknown { color: var(--na); }
+  .cve-meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; align-items: center; font-size: 12px; color: #64748b; }
+  .cvss { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: monospace; }
+  .cvss.critical { background: #7f1d1d; color: white; }
+  .cvss.high { background: #fee2e2; color: #991b1b; }
+  .cve-card p { font-size: 13px; color: #475569; line-height: 1.6; }
+  .cve-ref-grid { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 24px; page-break-inside: avoid; }
+  .cve-ref-grid h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  .ref-item { background: #f8fafc; border-radius: 8px; padding: 10px 12px; font-size: 11px; }
+  .ref-item .rid { font-weight: 700; font-family: monospace; color: #312e81; }
+  .ref-item .rtitle { color: #475569; margin-top: 2px; }
+
+  /* Footer */
+  .footer { background: #1e293b; color: #94a3b8; padding: 24px 40px; font-size: 12px; margin-top: 40px; }
+  .footer p { margin-bottom: 4px; }
+
+  h2.section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; color: #1e293b; }
+
+  /* PDF / Print */
+  @media print {
+    @page { size: A4; margin: 14mm 16mm 14mm 16mm; }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body { background: white !important; font-size: 11px; }
+    .main { padding: 6px 0; max-width: 100%; }
+
+    /* Header — keep compact */
+    .header { padding: 14px 20px !important; }
+    .header h1 { font-size: 16px !important; margin-bottom: 2px; }
+    .header .subtitle { font-size: 11px !important; margin-top: 3px; }
+    .header .meta { font-size: 9px !important; margin-top: 6px; gap: 12px; }
+
+    /* Section dividers */
+    .section-divider {
+      background: #312e81 !important;
+      padding: 7px 20px !important;
+      font-size: 11px !important;
+      page-break-after: avoid;
+    }
+
+    /* Cards and findings — no shadows, tight borders */
+    .finding, .card, .exec-summary, .compliance-bar-wrap,
+    .stack, .scope-legend, .table-wrap, .cve-ref-grid,
+    .rec-card, .cve-card, .checklist, .pkg-table {
+      box-shadow: none !important;
+      border: 1px solid #e2e8f0 !important;
+      page-break-inside: avoid;
+    }
+
+    /* Findings — tighter padding */
+    .finding { margin-bottom: 8px !important; }
+    .finding-header { padding: 6px 10px !important; font-size: 10px !important; }
+    .finding-body { padding: 8px 12px !important; font-size: 10px !important; line-height: 1.5; }
+    .finding-body p { margin-bottom: 6px !important; }
+    .evidence code { font-size: 8.5px !important; padding: 3px 6px !important; }
+    .remediation { margin-top: 8px !important; padding: 6px 10px !important; font-size: 9.5px !important; }
+
+    /* Dashboard cards — smaller */
+    .dashboard { gap: 6px !important; margin-bottom: 12px !important; }
+    .card { padding: 10px 8px !important; }
+    .card .num { font-size: 20px !important; }
+    .card .lbl { font-size: 9px !important; }
+
+    /* Exec summary — compact */
+    .exec-summary { padding: 14px 16px !important; margin-bottom: 12px !important; }
+    .exec-summary h2 { font-size: 13px !important; margin-bottom: 8px !important; }
+    .exec-summary li { font-size: 10px !important; line-height: 1.6 !important; }
+    .exec-summary .remediation-priority { padding: 8px 12px !important; font-size: 10px !important; }
+
+    /* Goal section */
+    .goal-section { padding: 14px 16px !important; margin-bottom: 12px !important; }
+    .goal-section h2 { font-size: 13px !important; margin-bottom: 8px !important; }
+    .goal-section .goal-intro { font-size: 10px !important; line-height: 1.6 !important; }
+    .goal-section li { font-size: 10px !important; line-height: 1.7 !important; }
+    .goal-section .report-structure { font-size: 10px !important; padding: 8px 12px !important; }
+
+    /* Tables */
+    .summary-table th, .summary-table td { padding: 5px 8px !important; font-size: 9px !important; }
+
+    /* Footer */
+    .footer { background: #1e293b !important; padding: 8px 20px !important; font-size: 9px !important; }
+
+    /* Page breaks */
+    .section-divider + * { page-break-before: avoid; }
+    h2.section-title { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>OWASP DSGAI Data Security Compliance Report</h1>
+  <div class="subtitle">demo-customer-ai — Customer Support AI Assistant</div>
+  <div class="meta">
+    <span>Generated: 2026-04-18</span>
+    <span>Framework: OWASP GenAI Data Security Risks &amp; Mitigations v1.0 (March 2026)</span>
+    <span>Controls assessed: 21</span>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- GOAL -->
+<div class="goal-section">
+  <h2>Goal</h2>
+  <p class="goal-intro">
+    This report scans a software codebase against the <strong>OWASP GenAI Data Security Risks and Mitigations 2026 (v1.0)</strong> — a framework published by the Open Worldwide Application Security Project in March 2026 that defines 21 data security risks specific to GenAI and agentic systems. The goal is to automatically detect OWASP GenAI data security risks and make it easier for teams to act on them — without requiring every developer or reviewer to manually read and interpret the full OWASP specification. Beyond detection, the automation provides several additional benefits:
+  </p>
+  <ul>
+    <li><strong>Shift-left security</strong> — catches risks at development time, not at pen test or production incident time</li>
+    <li><strong>Consistent coverage</strong> — eliminates human variance in manual reviews; every scan checks all 21 controls every time</li>
+    <li><strong>Live CVE intelligence</strong> — automatically cross-references the repo's exact dependency versions against live vulnerability databases, surfacing exploitable CVEs without manual lookups</li>
+    <li><strong>Audit-ready output</strong> — generates a shareable, self-contained HTML report that serves as documented evidence of a security review against a published standard</li>
+    <li><strong>CI/CD integration ready</strong> — the scan can be run on every pull request or release branch, making GenAI security a continuous practice rather than a one-time checkpoint</li>
+    <li><strong>Prioritised remediation backlog</strong> — findings are tiered so teams know what to fix today versus what goes into the architecture backlog</li>
+  </ul>
+  <p class="goal-intro" style="margin-top:14px; margin-bottom:0;">
+    This report is designed to benefit security practitioners, developers, security architects, and engineering managers — see the <strong>Who Benefits</strong> section below for details on how each audience can use it.
+  </p>
+  <div class="report-structure">
+    <strong>This report contains two sections:</strong>
+    <ol>
+      <li><strong>Section 1 — DSGAI Compliance Findings:</strong> A full assessment of the codebase against all 21 OWASP DSGAI controls, with per-control status (FAIL / WARN / PASS / N/A), evidence pointers into source files, and prioritised remediation guidance.</li>
+      <li><strong>Section 2 — CVE Advisory:</strong> Real-time CVE data fetched at scan time from the NVD (National Vulnerability Database) and OSV, cross-referenced against the exact dependency versions pinned in this repository. Each CVE is classified as Exploitable, Not Affected, or Unknown and mapped to the relevant DSGAI control.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="exec-summary">
+  <h2>Executive Summary</h2>
+  <p class="opening">
+    The <strong>demo-customer-ai</strong> Customer Support AI Assistant was assessed against 21 OWASP DSGAI controls. The overall posture is <strong>critical</strong> — 11 controls fail, with multiple high-severity issues directly exposing live customer PII.
+  </p>
+  <ul>
+    <li>The system uses <strong>LangChain 0.1.16</strong> with <strong>SQLDatabaseChain</strong> executing LLM-generated SQL directly against PostgreSQL — no query validator, no read-only enforcement.</li>
+    <li><strong>ChromaDB 0.4.24</strong> is deployed unauthenticated over plain HTTP with <code>ALLOW_RESET=true</code>, exposing all customer knowledge base embeddings.</li>
+    <li>An <strong>MCP server with no authentication</strong> exposes tools that return customer names, emails, dates of birth, and order history to any network caller.</li>
+    <li>A <strong>database password is hardcoded in the LLM system prompt</strong> (<code>config.py:8</code>) — the model can leak it in any response.</li>
+    <li><strong>Full prompts and LLM responses are logged verbatim</strong> to stdout and telemetry, including all customer PII retrieved from the knowledge base.</li>
+    <li>CVE enrichment is online — 5 CVEs found across 3 DSGAI risk groups: 4 Not Affected, 1 Unknown scope. The LangChain SQL injection pattern (CVE-2023-36189) is not exploitable by version, but the architectural risk (unvalidated LLM-generated SQL) is confirmed present under DSGAI12.</li>
+  </ul>
+  <div class="remediation-priority">
+    <strong>Recommended remediation priority:</strong> Remove the password from the system prompt → disable verbose telemetry logging → enforce SQL read-only + validator → add ChromaDB auth and TLS → add MCP authentication → implement tenant isolation in RAG queries.
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+  <div class="card fail"><div class="num">11</div><div class="lbl">FAIL</div></div>
+  <div class="card warn"><div class="num">4</div><div class="lbl">WARN</div></div>
+  <div class="card pass"><div class="num">1</div><div class="lbl">PASS</div></div>
+  <div class="card nv"><div class="num">1</div><div class="lbl">Not Validated</div></div>
+  <div class="card na"><div class="num">4</div><div class="lbl">Not Applicable</div></div>
+  <div class="card" style="border-top:3px solid #dc2626;"><div class="num" style="color:#dc2626">0</div><div class="lbl">Exploitable CVEs</div></div>
+  <div class="card cve-p"><div class="num">4</div><div class="lbl">Patched CVEs</div></div>
+  <div class="card cve-u"><div class="num">1</div><div class="lbl">Unknown CVEs</div></div>
+</div>
+
+<!-- COMPLIANCE BAR -->
+<div class="compliance-bar-wrap">
+  <h3>Compliance Distribution — 21 Controls</h3>
+  <div class="bar">
+    <div class="bar-seg" style="width:52.4%;background:var(--fail);">11 FAIL</div>
+    <div class="bar-seg" style="width:19%;background:var(--warn);">4 WARN</div>
+    <div class="bar-seg" style="width:4.8%;background:var(--pass);">1</div>
+    <div class="bar-seg" style="width:4.8%;background:var(--nv);">1</div>
+    <div class="bar-seg" style="width:19%;background:var(--na);">4 N/A</div>
+  </div>
+  <div class="bar-legend">
+    <span><span class="dot" style="background:var(--fail)"></span> FAIL (11)</span>
+    <span><span class="dot" style="background:var(--warn)"></span> WARN (4)</span>
+    <span><span class="dot" style="background:var(--pass)"></span> PASS (1)</span>
+    <span><span class="dot" style="background:var(--nv)"></span> Not Validated (1)</span>
+    <span><span class="dot" style="background:var(--na)"></span> Not Applicable (4)</span>
+  </div>
+</div>
+
+<!-- AI STACK -->
+<div class="stack">
+  <h2>AI Component Inventory</h2>
+  <div class="chips">
+    <span class="chip framework">LangChain 0.1.16</span>
+    <span class="chip framework">LangChain-Community 0.0.38</span>
+    <span class="chip framework">AgentExecutor (ReAct)</span>
+    <span class="chip framework">SQLDatabaseChain</span>
+    <span class="chip vector">ChromaDB 0.4.24</span>
+    <span class="chip llm">FakeListLLM (stub)</span>
+    <span class="chip mcp">MCP Server (FastAPI, no auth)</span>
+    <span class="chip db">PostgreSQL (psycopg2)</span>
+    <span class="chip obs">LangSmith 0.1.49</span>
+    <span class="chip framework">torch &ge;2.0.0 (unpinned)</span>
+  </div>
+</div>
+
+<!-- ====================================================== -->
+<div class="section-divider">Section 1 — DSGAI Compliance Findings</div>
+<!-- ====================================================== -->
+
+<!-- SCOPE LEGEND -->
+<div class="scope-legend" style="margin-top:20px;">
+  <h3>Scope Tag Legend</h3>
+  <div class="scope-items">
+    <div class="scope-item">
+      <span class="scope-badge">BUILD</span>
+      <span class="scope-desc">Your team implements this control in the codebase — e.g. adding auth middleware, PII scrubbing, query validators.</span>
+    </div>
+    <div class="scope-item">
+      <span class="scope-badge">BUY</span>
+      <span class="scope-desc">The LLM provider or SaaS vendor is responsible — e.g. the model provider's training data practices, their infrastructure security.</span>
+    </div>
+    <div class="scope-item">
+      <span class="scope-badge">BOTH</span>
+      <span class="scope-desc">Shared responsibility — your code handles part of it (e.g. PII scrubbing before sending) and the provider handles the rest (e.g. no-train opt-out).</span>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<div class="table-wrap" style="margin-top:20px;">
+  <h2>Summary Table</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Risk Name</th><th>Scope</th><th>Tier</th><th>Status</th><th>Key Evidence</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">DSGAI01</td><td>Training Data Privacy</td><td>BOTH</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">ingestion.py:20 — no PII scrub before embed</td></tr>
+      <tr><td class="mono">DSGAI02</td><td>Agentic Credential Management</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">config.py:2 — hardcoded DB_PASSWORD</td></tr>
+      <tr><td class="mono">DSGAI03</td><td>Shadow AI &amp; Data Flows</td><td>BOTH</td><td>2</td><td><span class="badge warn">WARN</span></td><td class="mono">.env.example:14 — LANGCHAIN_TRACING_V2=true</td></tr>
+      <tr><td class="mono">DSGAI04</td><td>AI Supply Chain Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">loader.py:15 — torch.load() no weights_only</td></tr>
+      <tr><td class="mono">DSGAI05</td><td>RAG Data Security</td><td>BUILD</td><td>2</td><td><span class="badge warn">WARN</span></td><td class="mono">retriever.py:22 — no access filter</td></tr>
+      <tr><td class="mono">DSGAI06</td><td>MCP and Plugin Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">server.py — no auth, plain HTTP</td></tr>
+      <tr><td class="mono">DSGAI07</td><td>Data Lifecycle Management</td><td>BUILD</td><td>2</td><td><span class="badge fail">FAIL</span></td><td class="mono">customer_agent.py:44 — no session TTL</td></tr>
+      <tr><td class="mono">DSGAI08</td><td>Regulatory &amp; Privacy Compliance</td><td>BOTH</td><td>3</td><td><span class="badge nv">Not Validated</span></td><td class="mono">No DPIA, no appsec/ artifacts found</td></tr>
+      <tr><td class="mono">DSGAI09</td><td>Multimodal AI Data Security</td><td>BOTH</td><td>3</td><td><span class="badge na">N/A</span></td><td class="mono">Text-only system</td></tr>
+      <tr><td class="mono">DSGAI10</td><td>Synthetic Data Security</td><td>BUILD</td><td>3</td><td><span class="badge na">N/A</span></td><td class="mono">No synthetic data pipeline</td></tr>
+      <tr><td class="mono">DSGAI11</td><td>Multi-Tenant Data Isolation</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">retriever.py:22 — shared collection, no tenant filter</td></tr>
+      <tr><td class="mono">DSGAI12</td><td>Database Agent Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">sql_agent.py:28 — SQLDatabaseChain, no validator</td></tr>
+      <tr><td class="mono">DSGAI13</td><td>Vector Store Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">vectorstore.py:12 — no auth, ALLOW_RESET=true</td></tr>
+      <tr><td class="mono">DSGAI14</td><td>AI Telemetry Data Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">logging.py:20 — full prompt+response logged</td></tr>
+      <tr><td class="mono">DSGAI15</td><td>Context Window Data Security</td><td>BUILD</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">config.py:8 — password in system prompt</td></tr>
+      <tr><td class="mono">DSGAI16</td><td>AI IDE Plugin Security</td><td>BUILD</td><td>3</td><td><span class="badge na">N/A</span></td><td class="mono">Backend service only</td></tr>
+      <tr><td class="mono">DSGAI17</td><td>AI System Resilience</td><td>BUILD</td><td>2</td><td><span class="badge pass">PASS</span></td><td class="mono">sql_agent.py:35 — tenacity retry + input limits</td></tr>
+      <tr><td class="mono">DSGAI18</td><td>Model Output Data Security</td><td>BUILD</td><td>2</td><td><span class="badge warn">WARN</span></td><td class="mono">main.py:59 — no output guardrails</td></tr>
+      <tr><td class="mono">DSGAI19</td><td>AI Data Labeling Security</td><td>BUILD</td><td>3</td><td><span class="badge na">N/A</span></td><td class="mono">No labeling pipeline</td></tr>
+      <tr><td class="mono">DSGAI20</td><td>Inference API Security</td><td>BOTH</td><td>1</td><td><span class="badge fail">FAIL</span></td><td class="mono">main.py:45 — no auth, no rate limit on /chat</td></tr>
+      <tr><td class="mono">DSGAI21</td><td>Knowledge Store Security</td><td>BUILD</td><td>2</td><td><span class="badge warn">WARN</span></td><td class="mono">ingestion.py:21 — no content validation</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DETAILED FINDINGS -->
+
+<!-- DSGAI01 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI01</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Training Data Privacy</span>
+    <span class="badge scope">BOTH</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>Raw documents containing customer PII (email addresses, dates of birth, partial card numbers) are embedded into ChromaDB without any anonymization or PII scrubbing. No presidio, redact, or anonymize patterns found anywhere in the ingestion pipeline.</p>
+    <div class="evidence">
+      <code>app/rag/ingestion.py:20 — embedding = self.embeddings.embed_query(doc["content"])  # no PII scan</code>
+      <code>app/rag/ingestion.py:32 — "alice@example.com", "Bob Smith (DOB: 1985-03-12)", "Card ending 4242"</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>presidio-analyzer</code> + <code>presidio-anonymizer</code> and run on <code>doc["content"]</code> before embedding</li>
+        <li>Remove PII from hardcoded seed documents in <code>ingestion.py:32-34</code></li>
+        <li>Set <code>allow_training=False</code> / <code>X-Training-Data: false</code> when switching to a real LLM API</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI02 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI02</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Agentic Credential Management</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>Database password hardcoded in <code>config.py</code>. The same password is also embedded in the LLM system prompt, making it visible to the model and leakable in responses. K8s secret is base64-only (not encrypted at rest). No vault or secrets manager integration found.</p>
+    <div class="evidence">
+      <code>app/config.py:2 — DB_PASSWORD = "Sup3rS3cr3t!"</code>
+      <code>app/config.py:3 — DB_URL = "postgresql://support_user:Sup3rS3cr3t!@postgres:5432/..."</code>
+      <code>app/config.py:8 — SYSTEM_PROMPT contains "our database admin password is Sup3rS3cr3t!"</code>
+      <code>k8s/secret.yaml:11 — base64-encoded password (not encrypted at rest by default)</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Load <code>DB_PASSWORD</code> from environment variable or Vault (<code>os.environ["DB_PASSWORD"]</code>)</li>
+        <li>Remove the password from <code>SYSTEM_PROMPT</code> — this is a critical data leak vector</li>
+        <li>Enable Kubernetes EncryptionConfiguration for Secrets at rest, or use External Secrets Operator</li>
+        <li>Scope agent tool grants per session — not all tools to all requests</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI03 -->
+<div class="finding status-warn">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI03</span>
+    <span class="badge warn">WARN</span>
+    <span class="finding-title">Shadow AI &amp; Unauthorized Data Flows</span>
+    <span class="badge scope">BOTH</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p>No hardcoded external LLM endpoints found (uses FakeListLLM stub). However, <code>LANGCHAIN_TRACING_V2=true</code> is set in both <code>.env.example</code> and <code>docker-compose.yml</code>, sending full trace data (prompts, completions) to LangSmith — an external SaaS — without evidence of a DPA or data residency review.</p>
+    <div class="evidence">
+      <code>.env.example:14 — LANGCHAIN_TRACING_V2=true</code>
+      <code>docker-compose.yml:16 — LANGCHAIN_TRACING_V2=true</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Disable <code>LANGCHAIN_TRACING_V2</code> in production or route to a self-hosted LangSmith instance</li>
+        <li>Document LangSmith as an approved data processor with a signed DPA</li>
+        <li>Add egress policy restricting LLM API calls to approved endpoints only</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI04 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI04</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">AI Supply Chain Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p><code>torch.load()</code> called without <code>weights_only=True</code> — allows arbitrary code execution via pickle deserialization if the model file is tampered. <code>torch</code> and <code>numpy</code> are unpinned (<code>&gt;=</code> range). No model checksum verification. No SBOM generation in CI.</p>
+    <div class="evidence">
+      <code>app/models/loader.py:15 — model = torch.load(model_path)  # missing weights_only=True</code>
+      <code>requirements.txt:19 — torch>=2.0.0  # unpinned</code>
+      <code>requirements.txt:20 — numpy>=1.24.0  # unpinned</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Change to <code>torch.load(model_path, weights_only=True)</code></li>
+        <li>Pin <code>torch</code> and <code>numpy</code> to exact versions in <code>requirements.txt</code></li>
+        <li>Add sha256 checksum verification before <code>torch.load()</code></li>
+        <li>Add <code>syft</code> SBOM generation step to <code>.github/workflows/ci.yml</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI05 -->
+<div class="finding status-warn">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI05</span>
+    <span class="badge warn">WARN</span>
+    <span class="finding-title">RAG Data Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p><code>similarity_search()</code> runs with no access control filter — all documents are returned regardless of sensitivity level. Documents contain customer PII with no access-level metadata. No path traversal protection on the <code>/ingest</code> endpoint's <code>source</code> parameter.</p>
+    <div class="evidence">
+      <code>app/rag/retriever.py:22 — results = self.vectorstore.similarity_search(query, k=k)  # no filter</code>
+      <code>app/main.py:61 — async def ingest_documents(source: str = "knowledge_base")  # unsanitized</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>filter={"access_level": "internal"}</code> to all <code>similarity_search()</code> calls</li>
+        <li>Tag documents with <code>access_level</code> and <code>sensitivity</code> metadata at ingestion time</li>
+        <li>Validate and allowlist the <code>source</code> parameter on <code>/ingest</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI06 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI06</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">MCP and Plugin Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>MCP server has no authentication — any network client can call all customer data tools. All MCP calls use plain HTTP. No tool argument schema validation. No Kubernetes NetworkPolicy restricting which pods can reach the MCP server.</p>
+    <div class="evidence">
+      <code>mcp_server/server.py:4 — no authentication middleware on any route</code>
+      <code>app/config.py:19 — MCP_SERVER_URL = "http://mcp-server:8001"  # plain HTTP</code>
+      <code>app/agents/customer_agent.py:62 — httpx.get(f"{MCP_SERVER_URL}/tools/...")  # no auth header</code>
+      <code>k8s/deployment.yaml:57 — no NetworkPolicy restricting MCP pod access</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add bearer token middleware to MCP server: validate <code>Authorization: Bearer &lt;MCP_API_KEY&gt;</code></li>
+        <li>Pass auth header in <code>customer_agent.py</code>: <code>headers={"Authorization": f"Bearer {MCP_API_KEY}"}</code></li>
+        <li>Switch to HTTPS or add TLS at the ingress level</li>
+        <li>Add Kubernetes <code>NetworkPolicy</code> to restrict MCP pod access to the API pod only</li>
+        <li>Add Pydantic input validation on all MCP tool arguments</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI07 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI07</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Data Lifecycle Management</span>
+    <span class="badge scope">BUILD</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p>No TTL on session history — <code>AgentExecutor</code> memory grows indefinitely. No right-to-erasure handler. No embedding deletion capability. No data lifecycle constants (<code>RETENTION_DAYS</code>, <code>HISTORY_TTL</code>) anywhere in the codebase.</p>
+    <div class="evidence">
+      <code>app/agents/customer_agent.py:44 — no session TTL, no memory eviction policy</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>ConversationBufferWindowMemory(k=10)</code> or TTL-based memory to <code>AgentExecutor</code></li>
+        <li>Implement a <code>/gdpr/delete/{session_id}</code> endpoint that purges conversation history</li>
+        <li>Add <code>HISTORY_TTL_DAYS = 30</code> constant and enforce via a scheduled cleanup job</li>
+        <li>Implement <code>client.delete_collection()</code> or namespace-scoped deletion for ChromaDB</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI08 -->
+<div class="finding status-nv">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI08</span>
+    <span class="badge nv">Not Validated</span>
+    <span class="finding-title">Regulatory &amp; Privacy Compliance</span>
+    <span class="badge scope">BOTH</span><span class="badge t3">Tier 3</span>
+  </div>
+  <div class="finding-body">
+    <p>No DPIA/PIA artifacts found. No <code>appsec/</code> or <code>security-review/</code> folder (security architecture review evidence). System processes personal data in an AI pipeline — GDPR Article 35 likely requires a DPIA. LangSmith telemetry sends data externally without documented DPA.</p>
+    <div class="evidence">
+      <code>No appsec/, DPIA.md, PIA, or consent pattern found in codebase</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Conduct a DPIA for processing customer PII in an automated AI pipeline</li>
+        <li>Complete a security architecture review and store artifacts in <code>appsec/</code> or <code>security-review/</code></li>
+        <li>Ensure LangSmith DPA is signed before enabling tracing in production</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI09 -->
+<div class="finding status-na">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI09</span>
+    <span class="badge na">N/A</span>
+    <span class="finding-title">Multimodal AI Data Security</span>
+    <span class="badge scope">BOTH</span><span class="badge t3">Tier 3</span>
+  </div>
+  <div class="finding-body">
+    <p>Text-only system. No image, audio, or video processing found. Control not applicable.</p>
+  </div>
+</div>
+
+<!-- DSGAI10 -->
+<div class="finding status-na">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI10</span>
+    <span class="badge na">N/A</span>
+    <span class="finding-title">Synthetic Data Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t3">Tier 3</span>
+  </div>
+  <div class="finding-body">
+    <p>No synthetic data generation pipeline found. Control not applicable.</p>
+  </div>
+</div>
+
+<!-- DSGAI11 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI11</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Multi-Tenant Data Isolation</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>Single shared ChromaDB collection <code>customer_knowledge_base</code> serves all users with no tenant namespace or filter. Every <code>similarity_search()</code> call is missing a tenant filter — any user's query can retrieve documents belonging to any other user.</p>
+    <div class="evidence">
+      <code>app/rag/vectorstore.py:17 — COLLECTION_NAME = "customer_knowledge_base"  # shared, no tenant scope</code>
+      <code>app/rag/retriever.py:22 — similarity_search(query, k=k)  # no filter={"tenant_id": ...}</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>filter={"tenant_id": current_tenant}</code> to all <code>similarity_search()</code> calls</li>
+        <li>Tag all documents with <code>tenant_id</code> metadata at ingestion time</li>
+        <li>Consider per-tenant Chroma collections: <code>collection_name=f"{tenant_id}_knowledge"</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI12 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI12</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Database Agent Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+    <span class="badge cve">CVE-2023-36189</span>
+  </div>
+  <div class="finding-body">
+    <p><code>SQLDatabaseChain</code> executes LLM-generated SQL directly against PostgreSQL with no query validator, no read-only enforcement, and no DDL protection. The LLM could generate <code>DROP TABLE</code>, <code>DELETE FROM customers</code>, or <code>TRUNCATE orders</code>.</p>
+    <div class="evidence">
+      <code>app/agents/sql_agent.py:28 — SQLDatabaseChain.from_llm(llm=self.llm, db=self.db, verbose=True)</code>
+      <code>app/agents/sql_agent.py:43 — result = self.chain.invoke({"query": ...})  # no validation before execution</code>
+      <code>app/config.py:3 — DB connection uses full CRUD account (no read-only user)</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Create a read-only PostgreSQL user and use it for the SQL agent connection</li>
+        <li>Add a SQL validator that rejects any non-SELECT statement before execution</li>
+        <li>Add <code>LIMIT 100</code> cap enforcement on all agent-issued queries</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI13 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI13</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Vector Store Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+    <span class="badge cve">CVE-2024-3584</span>
+  </div>
+  <div class="finding-body">
+    <p>ChromaDB initialized with no authentication over plain HTTP. <code>ALLOW_RESET=true</code> in both Docker Compose and Helm — allows wiping the entire vector store without credentials. K8s secret stores values as base64 only.</p>
+    <div class="evidence">
+      <code>app/rag/vectorstore.py:12 — chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)  # no auth</code>
+      <code>docker-compose.yml:45 — ALLOW_RESET=true</code>
+      <code>helm/values.yaml:28 — ALLOW_RESET: "true"</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>headers={"Authorization": f"Bearer {CHROMA_API_KEY}"}</code> to <code>chromadb.HttpClient()</code></li>
+        <li>Set <code>ALLOW_RESET=false</code> in all non-test environments</li>
+        <li>Add TLS termination at ingress or configure Chroma with SSL</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI14 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI14</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">AI Telemetry &amp; Observability Data Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>Full prompts and LLM responses logged verbatim including all customer PII. <code>print(response)</code> writes full output to stdout (visible in container logs and any log aggregator). <code>CAPTURE_CONTENT=True</code> and <code>LOG_FULL_RESPONSE=True</code> enabled with no PII redaction.</p>
+    <div class="evidence">
+      <code>app/config.py:12-14 — LANGCHAIN_VERBOSE=True, CAPTURE_CONTENT=True, LOG_FULL_RESPONSE=True</code>
+      <code>app/telemetry/logging.py:20 — "prompt": prompt  # raw PII logged verbatim</code>
+      <code>app/telemetry/logging.py:34 — print(f"[RESPONSE] session={session_id} response={response}")</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Set <code>CAPTURE_CONTENT=False</code> and <code>LOG_FULL_RESPONSE=False</code> in production config</li>
+        <li>Add presidio PII scrubbing before any <code>logger.info()</code> that includes prompt/response content</li>
+        <li>Remove all <code>print(response)</code> statements from production code paths</li>
+        <li>Log only <code>session_id</code>, token counts, and latency — not content</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI15 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI15</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Context Window Data Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>System prompt is hardcoded in source and contains the plaintext database password. If the model ever includes system prompt content in its output — a known LLM behaviour — the password is exposed to end users. No context size limits configured.</p>
+    <div class="evidence">
+      <code>app/config.py:6-9 — SYSTEM_PROMPT hardcoded with: "our database admin password is Sup3rS3cr3t!"</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Remove the password from the system prompt immediately</li>
+        <li>Load <code>SYSTEM_PROMPT</code> from an environment variable or Vault, not hardcoded in source</li>
+        <li>Add <code>max_context_length</code> truncation to prevent unbounded context accumulation</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI16 -->
+<div class="finding status-na">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI16</span>
+    <span class="badge na">N/A</span>
+    <span class="finding-title">AI IDE Plugin &amp; Extension Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t3">Tier 3</span>
+  </div>
+  <div class="finding-body">
+    <p>Backend service — no IDE plugin or developer tooling component. Control not applicable.</p>
+  </div>
+</div>
+
+<!-- DSGAI17 -->
+<div class="finding status-pass">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI17</span>
+    <span class="badge pass">PASS</span>
+    <span class="finding-title">AI System Resilience &amp; Availability</span>
+    <span class="badge scope">BUILD</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p>Retry with exponential backoff implemented on DB connection using <code>tenacity</code>. Input length validation on the <code>/chat</code> endpoint guards against oversized inputs. K8s deployment defines CPU and memory resource requests and limits.</p>
+    <div class="evidence">
+      <code class="ok">app/agents/sql_agent.py:35-36 — @retry(stop=stop_after_attempt(3), wait=wait_exponential(...)) ✓</code>
+      <code class="ok">app/main.py:47 — if len(request.query) > MAX_INPUT_LENGTH: raise HTTPException(400) ✓</code>
+      <code class="ok">k8s/deployment.yaml:28-35 — CPU/memory requests and limits defined ✓</code>
+    </div>
+    <p style="margin-top:8px;color:#92400e;">Note: no rate limiting on the <code>/chat</code> endpoint — see DSGAI20.</p>
+  </div>
+</div>
+
+<!-- DSGAI18 -->
+<div class="finding status-warn">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI18</span>
+    <span class="badge warn">WARN</span>
+    <span class="finding-title">Model Output Data Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p>No output guardrails, moderation layer, or PII detection on LLM responses before returning to the caller. <code>max_tokens</code> not set on LLM calls (currently FakeListLLM stub — real deployment must configure this).</p>
+    <div class="evidence">
+      <code>app/main.py:59 — return ChatResponse(answer=response, ...)  # no guardrails check</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>guardrails-ai</code> or <code>llm-guard</code> output validation before returning from <code>/chat</code></li>
+        <li>Run presidio PII scan on model output and redact before sending to client</li>
+        <li>Set <code>max_tokens=512</code> (or appropriate limit) on all real LLM calls</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI19 -->
+<div class="finding status-na">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI19</span>
+    <span class="badge na">N/A</span>
+    <span class="finding-title">AI Data Labeling Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t3">Tier 3</span>
+  </div>
+  <div class="finding-body">
+    <p>No data labeling pipeline found. Control not applicable.</p>
+  </div>
+</div>
+
+<!-- DSGAI20 -->
+<div class="finding status-fail">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI20</span>
+    <span class="badge fail">FAIL</span>
+    <span class="finding-title">Inference API Security</span>
+    <span class="badge scope">BOTH</span><span class="badge t1">Tier 1</span>
+  </div>
+  <div class="finding-body">
+    <p>The <code>/chat</code> endpoint has no authentication and no rate limiting — accepts unlimited requests from any caller. No prompt injection detection layer. MCP tools are likewise unauthenticated.</p>
+    <div class="evidence">
+      <code>app/main.py:18-20 — no rate limiting middleware added</code>
+      <code>app/main.py:45 — @app.post("/chat") — no auth dependency, no rate limit decorator</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add <code>slowapi</code> rate limiter: <code>@limiter.limit("10/minute")</code> on <code>/chat</code></li>
+        <li>Add API key or OAuth2 Bearer authentication as a FastAPI dependency on <code>/chat</code> and <code>/ingest</code></li>
+        <li>Add prompt injection detection (e.g. <code>llm-guard</code> input scanner) before passing to AgentExecutor</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DSGAI21 -->
+<div class="finding status-warn">
+  <div class="finding-header">
+    <span class="finding-id">DSGAI21</span>
+    <span class="badge warn">WARN</span>
+    <span class="finding-title">Knowledge Store Security</span>
+    <span class="badge scope">BUILD</span><span class="badge t2">Tier 2</span>
+  </div>
+  <div class="finding-body">
+    <p>The ingestion pipeline writes to ChromaDB without content validation or audit logging. Retrieval path is read-only (good). No version control on KB entries — a malicious document could persistently poison RAG responses.</p>
+    <div class="evidence">
+      <code>app/rag/ingestion.py:21-27 — collection.add(documents=[...])  # no content validation</code>
+      <code class="ok">app/rag/retriever.py — read-only: similarity_search only, no writes ✓</code>
+    </div>
+    <div class="remediation">
+      <strong>Remediation</strong>
+      <ul>
+        <li>Add content validation before <code>collection.add()</code> to reject injection patterns</li>
+        <li>Restrict the <code>/ingest</code> endpoint to admin/service accounts only</li>
+        <li>Add an audit log entry for every document ingested (who, when, source)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="recs">
+  <h2>Prioritised Recommendations</h2>
+  <div class="rec-card t1">
+    <h3>Fix Today — Tier 1 (FAIL items)</h3>
+    <ul>
+      <li><strong>DSGAI15/02:</strong> Remove DB password from <code>SYSTEM_PROMPT</code> in <code>config.py</code> and move all credentials to env vars / Vault</li>
+      <li><strong>DSGAI14:</strong> Set <code>CAPTURE_CONTENT=False</code> and <code>LOG_FULL_RESPONSE=False</code> for production; remove <code>print(response)</code></li>
+      <li><strong>DSGAI12:</strong> Add read-only DB user and SQL validator before <code>SQLDatabaseChain</code> execution</li>
+      <li><strong>DSGAI13:</strong> Add ChromaDB authentication and disable <code>ALLOW_RESET</code> in non-test environments</li>
+      <li><strong>DSGAI06:</strong> Add bearer token auth to MCP server and switch to HTTPS</li>
+      <li><strong>DSGAI20:</strong> Add API key auth and <code>slowapi</code> rate limiter to <code>/chat</code></li>
+      <li><strong>DSGAI11:</strong> Add tenant filter to all <code>similarity_search()</code> calls</li>
+      <li><strong>DSGAI04:</strong> Change <code>torch.load()</code> to use <code>weights_only=True</code> and pin torch version</li>
+      <li><strong>DSGAI01:</strong> Add presidio PII scrubbing in <code>ingestion.py</code> before embedding</li>
+    </ul>
+  </div>
+  <div class="rec-card t2">
+    <h3>Architecture Backlog — Tier 2 (WARN items)</h3>
+    <ul>
+      <li><strong>DSGAI03:</strong> Review LangSmith DPA; disable tracing or self-host in production</li>
+      <li><strong>DSGAI05:</strong> Add access-level metadata to documents and filter on retrieval</li>
+      <li><strong>DSGAI07:</strong> Implement session TTL and right-to-erasure endpoint</li>
+      <li><strong>DSGAI18:</strong> Add guardrails-ai or llm-guard output scanning layer</li>
+      <li><strong>DSGAI21:</strong> Add content validation and audit log for KB writes</li>
+    </ul>
+  </div>
+  <div class="rec-card t3">
+    <h3>Mature Program — Tier 3 (process &amp; governance)</h3>
+    <ul>
+      <li><strong>DSGAI08:</strong> Complete DPIA for customer PII processing in AI pipeline; complete security architecture review</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CHECKLIST -->
+<div class="checklist">
+  <h2>DSGAI Compliance Artifacts Checklist</h2>
+  <ul>
+    <li><span>❌</span> AI component inventory documented</li>
+    <li><span>❌</span> All LLM API keys stored in approved secret store (not hardcoded)</li>
+    <li><span>❌</span> PII scrubbing in place before RAG ingestion</li>
+    <li><span>❌</span> Multi-tenant isolation enforced in RAG and vector queries</li>
+    <li><span>❌</span> Vector store authenticated and TLS-enabled</li>
+    <li><span>❌</span> AI telemetry does not log full prompts/completions in production</li>
+    <li><span>❌</span> Model artifact integrity verified (checksums / weights_only=True)</li>
+    <li><span>⚠️</span> Output guardrails or moderation layer deployed</li>
+    <li><span>❌</span> Inference API authenticated and rate-limited</li>
+    <li><span>❌</span> Data lifecycle TTLs configured for sessions, history, embeddings</li>
+    <li><span>❌</span> No hardcoded secrets in system prompts</li>
+    <li><span>❌</span> AppSec / Security Architecture Threat Modeling completed for AI components</li>
+    <li><span>✅</span> Retry/resilience patterns implemented (tenacity)</li>
+  </ul>
+</div>
+
+<!-- ====================================================== -->
+<div class="section-divider">Section 2 — CVE Advisory</div>
+<!-- ====================================================== -->
+
+<div style="margin-top:20px;">
+
+<div class="cve-banner online">
+  ✅ <strong>Online</strong> — NVD queried 2026-04-18. 5 CVEs found · <span style="color:var(--fail);font-weight:700;">0 Exploitable</span> · <span style="color:var(--pass);font-weight:700;">4 Not Affected</span> · <span style="color:var(--na);font-weight:700;">1 Unknown</span>
+</div>
+
+<div class="pkg-table">
+  <h2>AI/ML Package Inventory</h2>
+  <table>
+    <thead><tr><th>Package</th><th>Ecosystem</th><th>Version in repo</th><th>Pinned?</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">langchain</td><td>Python</td><td class="mono">0.1.16</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">langchain-community</td><td>Python</td><td class="mono">0.0.38</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">langchain-core</td><td>Python</td><td class="mono">0.1.52</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">chromadb</td><td>Python</td><td class="mono">0.4.24</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">torch</td><td>Python</td><td class="mono">&ge;2.0.0</td><td>⚠️ Unpinned — latest assumed</td></tr>
+      <tr><td class="mono">numpy</td><td>Python</td><td class="mono">&ge;1.24.0</td><td>⚠️ Unpinned — latest assumed</td></tr>
+      <tr><td class="mono">mcp</td><td>Python</td><td class="mono">0.9.1</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">langsmith</td><td>Python</td><td class="mono">0.1.49</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">fastapi</td><td>Python</td><td class="mono">0.111.0</td><td>✅ Pinned</td></tr>
+      <tr><td class="mono">tenacity</td><td>Python</td><td class="mono">8.2.3</td><td>✅ Pinned</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── CVE Group: DSGAI12 ── -->
+<div class="cve-group">
+  <div class="cve-group-header not-affected">
+    <span class="risk-id">DSGAI12</span>
+    <span style="color:#94a3b8">—</span>
+    <span class="risk-name">Database Agent Security</span>
+    <span class="cve-count">2 CVEs · Not Affected + Arch Risk</span>
+  </div>
+
+  <div class="cve-card patched">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="cve-id patched">CVE-2023-36189</span>
+      <span class="cvss high">CVSS 7.5 HIGH</span>
+      <span class="badge cve-patched">Not Affected</span>
+      <span style="font-size:12px;color:var(--fail);font-weight:600;">⚠️ Architectural risk still present</span>
+    </div>
+    <div class="cve-meta">
+      <span>Package: <strong>langchain</strong></span>
+      <span>Affects: &lt; 0.0.247</span>
+      <span>Fixed: 0.0.247</span>
+      <span>Repo: 0.1.16 — fix included ✅</span>
+      <span>Published: 2023-07-06 · Source: NVD</span>
+    </div>
+    <p>SQL injection via <code>SQLDatabaseChain</code> — LLM-generated queries allow remote attackers to read sensitive data. This repo's version is not affected by the CVE, <strong>but it actively uses <code>SQLDatabaseChain</code> without a query validator</strong> — the same architectural risk exists regardless of version. See DSGAI12 FAIL finding above.</p>
+  </div>
+
+  <div class="cve-card unknown">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="cve-id unknown">CVE-2024-45848</span>
+      <span class="cvss high">CVSS 8.8 HIGH</span>
+      <span class="badge na">Unknown Scope</span>
+    </div>
+    <div class="cve-meta">
+      <span>Package: <strong>chromadb</strong> (via MindsDB integration)</span>
+      <span>Affects: MindsDB 23.12.4.0 – 24.7.4.1</span>
+      <span>Repo: chromadb 0.4.24 — MindsDB not used</span>
+      <span>Published: 2024-09-12 · Source: NVD</span>
+    </div>
+    <p>Arbitrary code execution via <code>eval</code> in MindsDB's ChromaDB engine integration. Scope limited to MindsDB deployments — this repo uses ChromaDB directly. Marked unknown pending confirmation that MindsDB is absent from the deployment environment.</p>
+  </div>
+</div>
+
+<!-- ── CVE Group: DSGAI04 · DSGAI05 ── -->
+<div class="cve-group">
+  <div class="cve-group-header not-affected">
+    <span class="risk-id">DSGAI04 · DSGAI05</span>
+    <span style="color:#94a3b8">—</span>
+    <span class="risk-name">Supply Chain Security · RAG Data Security</span>
+    <span class="cve-count">2 CVEs · Not Affected</span>
+  </div>
+
+  <div class="cve-card patched">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="cve-id patched">CVE-2024-28088</span>
+      <span class="cvss high">CVSS 8.1 HIGH</span>
+      <span class="badge cve-patched">Not Affected</span>
+    </div>
+    <div class="cve-meta">
+      <span>Package: <strong>langchain</strong></span>
+      <span>Affects: &lt; 0.1.12</span>
+      <span>Fixed: 0.1.12</span>
+      <span>Repo: 0.1.16 — fix included ✅</span>
+      <span>Published: 2024-03-04 · Source: NVD</span>
+    </div>
+    <p>Path traversal via <code>load_chain</code> — bypasses restriction to <code>langchain-hub</code>, risking API key disclosure or RCE via crafted chain config files.</p>
+  </div>
+
+  <div class="cve-card patched">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="cve-id patched">CVE-2024-3571</span>
+      <span class="cvss high">CVSS 8.8 HIGH</span>
+      <span class="badge cve-patched">Not Affected</span>
+    </div>
+    <div class="cve-meta">
+      <span>Package: <strong>langchain</strong></span>
+      <span>Affects: 0.0.351</span>
+      <span>Fixed: &gt; 0.0.351</span>
+      <span>Repo: 0.1.16 — fix included ✅</span>
+      <span>Published: 2024-04-16 · Source: NVD</span>
+    </div>
+    <p>Path traversal in <code>LocalFileStore</code> — unsanitized user input in <code>mset</code>/<code>mget</code> allows read/write of arbitrary files on the filesystem.</p>
+  </div>
+</div>
+
+<!-- ── CVE Group: DSGAI03 · DSGAI06 ── -->
+<div class="cve-group">
+  <div class="cve-group-header not-affected">
+    <span class="risk-id">DSGAI03 · DSGAI06</span>
+    <span style="color:#94a3b8">—</span>
+    <span class="risk-name">Shadow AI · MCP and Plugin Security</span>
+    <span class="cve-count">1 CVE · Not Affected</span>
+  </div>
+
+  <div class="cve-card patched">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="cve-id patched">CVE-2025-2828</span>
+      <span class="cvss critical">CVSS 10.0 CRITICAL</span>
+      <span class="badge cve-patched">Not Affected</span>
+    </div>
+    <div class="cve-meta">
+      <span>Package: <strong>langchain-community</strong></span>
+      <span>Affects: &lt; 0.0.28</span>
+      <span>Fixed: 0.0.28</span>
+      <span>Repo: 0.0.38 — fix included ✅</span>
+      <span>Published: 2025 · Source: NVD</span>
+    </div>
+    <p>SSRF in <code>RequestsToolkit</code> — attackers bypass restrictions to access local/internal addresses, enabling port scanning, cloud metadata retrieval, and internal network exploitation via the agent's HTTP tool.</p>
+  </div>
+</div>
+
+<div class="cve-ref-grid">
+  <h2>DSGAI Risk Reference</h2>
+  <div class="ref-grid">
+    <div class="ref-item"><div class="rid">DSGAI01</div><div class="rtitle">Training Data Privacy</div></div>
+    <div class="ref-item"><div class="rid">DSGAI02</div><div class="rtitle">Agentic Credential Mgmt</div></div>
+    <div class="ref-item"><div class="rid">DSGAI03</div><div class="rtitle">Shadow AI</div></div>
+    <div class="ref-item"><div class="rid">DSGAI04</div><div class="rtitle">AI Supply Chain</div></div>
+    <div class="ref-item"><div class="rid">DSGAI05</div><div class="rtitle">RAG Data Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI06</div><div class="rtitle">MCP &amp; Plugin Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI07</div><div class="rtitle">Data Lifecycle / TTL</div></div>
+    <div class="ref-item"><div class="rid">DSGAI08</div><div class="rtitle">Regulatory Compliance</div></div>
+    <div class="ref-item"><div class="rid">DSGAI09</div><div class="rtitle">Multimodal AI</div></div>
+    <div class="ref-item"><div class="rid">DSGAI10</div><div class="rtitle">Synthetic Data</div></div>
+    <div class="ref-item"><div class="rid">DSGAI11</div><div class="rtitle">Multi-Tenant Isolation</div></div>
+    <div class="ref-item"><div class="rid">DSGAI12</div><div class="rtitle">Database Agent Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI13</div><div class="rtitle">Vector Store Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI14</div><div class="rtitle">AI Telemetry Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI15</div><div class="rtitle">Context Window Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI16</div><div class="rtitle">IDE Plugin Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI17</div><div class="rtitle">AI Resilience</div></div>
+    <div class="ref-item"><div class="rid">DSGAI18</div><div class="rtitle">Model Output Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI19</div><div class="rtitle">Data Labeling Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI20</div><div class="rtitle">Inference API Security</div></div>
+    <div class="ref-item"><div class="rid">DSGAI21</div><div class="rtitle">Knowledge Store Security</div></div>
+  </div>
+</div>
+
+</div>
+</div><!-- end main -->
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Generated: 2026-04-18 &nbsp;|&nbsp; Framework: OWASP GenAI Data Security Risks and Mitigations v1.0 (March 2026)</p>
+  <p>CVE Sources: NVD (services.nvd.nist.gov) &nbsp;|&nbsp; Repo: demo-customer-ai &nbsp;|&nbsp; Analyst: Claude Code / GenAIDataSecurity skill</p>
+  <p>To export as PDF: Ctrl+P (or Cmd+P on Mac) &rarr; Save as PDF</p>
+</div>
+
+</body>
+</html>
